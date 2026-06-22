@@ -83,6 +83,9 @@ getrandom = { version = "0.3", default-features = false, optional = true }
 # Direct wgpu dep for custom device init (must match cubecl-wgpu's version)
 wgpu = { version = "26", features = ["fragile-send-sync-non-atomic-wasm"], optional = true }
 rustc-hash = "1.1"
+log = "0.4.33"
+env_logger = "0.11.10"
+chrono = "0.4.45"
 
 [dev-dependencies]
 criterion = "0.8"

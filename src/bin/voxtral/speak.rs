@@ -11,6 +11,9 @@ use tracing::info;
 use voxtral_mini_realtime::audio::AudioBuffer;
 use voxtral_mini_realtime::tokenizer::TekkenEncoder;
 
+//use log::{LevelFilter};
+//use std::io::Write;
+
 type Backend = Wgpu;
 
 #[derive(Parser)]
@@ -64,6 +67,7 @@ pub struct Args {
     #[arg(long, default_value_t = 4)]
     euler_steps: usize,
 }
+
 
 pub fn run(args: Args) -> Result<()> {
     let device = burn::backend::wgpu::WgpuDevice::default();
@@ -189,6 +193,32 @@ fn run_q4(
     use voxtral_mini_realtime::tts::config::{AudioCodebookLayout, TtsSpecialTokens};
     use voxtral_mini_realtime::tts::embeddings::AudioCodebookEmbeddings;
     use voxtral_mini_realtime::tts::voice::load_voice_from_bytes;
+    /*
+    tracing_subscriber::fmt()
+        .event_format(
+            tracing_subscriber::fmt::format()
+                .with_file(true)
+                .with_line_number(true)
+        )
+    .init();
+     */
+    /*
+    
+    env_logger::Builder::new()
+        .format(|buf, record| {
+            writeln!(
+                buf,
+                "{}:{} {} [{}] - {}",
+                record.file().unwrap_or("unknown"),
+                record.line().unwrap_or(0),
+                chrono::Local::now().format("%Y-%m-%dT%H:%M:%S"),
+                record.level(),
+                record.args()
+            )
+        })
+        .filter(Some("logger_example"), LevelFilter::Debug)
+        .init();
+*/
 
     let path = PathBuf::from(gguf_path);
     if !path.exists() {
@@ -285,6 +315,7 @@ fn run_q4(
         voice = %args.voice,
         "Synthesizing"
     );
+    println!("generate");
     let gen_start = Instant::now();
     let frames = pollster::block_on(backbone.generate_async(
         input_sequence,
@@ -300,6 +331,7 @@ fn run_q4(
 
     // Codec decode
     let n_frames = frames.len();
+    println!("codec {}", n_frames);
     let semantic_indices: Vec<usize> = frames.iter().map(|f| f.semantic_idx).collect();
     let mut acoustic_data = Vec::with_capacity(n_frames * 36);
     for frame in &frames {
