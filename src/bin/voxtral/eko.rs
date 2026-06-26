@@ -1,0 +1,46 @@
+#[macro_export]
+macro_rules! EKO {
+    () => {
+        ::std::eprintln!("{}:{} ", file!(), line!());
+    };
+    ($val:expr $(,)?) => {
+        // Use of `match` here is intentional because it affects the lifetimes
+        // of temporaries - https://stackoverflow.com/a/48732525/1063961
+        match $val {
+            tmp => {
+                let time_format = "%I:%M:%S %p";
+                //let mut time_now = String::new();
+                let time_now = chrono::Local::now()
+                    .format(time_format)
+                .to_string();
+
+                ::std::eprintln!("{}:{} [{}] {}={:?}", file!(), line!(),
+                                 time_now,
+                                 ::std::stringify!($val),
+                                 &tmp);
+                tmp
+            }
+        }
+    };
+
+    ($val:literal $(,)?) => {
+        match $val {
+            tmp => {
+                let time_format = "%I:%M:%S %p";
+                //let mut time_now = String::new();
+                let time_now = chrono::Local::now()
+                    .format(time_format)
+                .to_string();
+
+                ::std::eprintln!("{}:{} [{}] {:?}", file!(), line!(),
+                                 time_now,
+                                 &tmp);
+                tmp
+            }
+        }
+    };
+    
+    ($($val:expr),+ $(,)?) => {
+        ($($crate::EKO!($val)),+,)
+    };
+}

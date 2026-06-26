@@ -1,12 +1,22 @@
 //! `voxtral speak` subcommand — text-to-speech.
 
+use pdf::{
+    error::PdfError,
+    file::FileOptions,
+    object::*,
+    build::*,
+    primitive::{PdfString, Name}, content::{Op, Color, Cmyk, Matrix}, font::{Font, TFont, FontData},
+};
+
 use anyhow::{bail, Context, Result};
 use burn::backend::Wgpu;
-use burn::tensor::Tensor;
+
 use clap::Parser;
 use std::path::PathBuf;
 use std::time::Instant;
+
 use tracing::info;
+//use tracing_subscriber;
 
 use voxtral_mini_realtime::audio::AudioBuffer;
 use voxtral_mini_realtime::tokenizer::TekkenEncoder;
@@ -14,6 +24,13 @@ use voxtral_mini_realtime::tokenizer::TekkenEncoder;
 //use log::{LevelFilter};
 //use std::io::Write;
 
+use crate::EKO;
+
+use sentencex::segment;
+use words_count;
+
+//use burn::tensor::{Tensor, s};
+use burn::tensor::{Tensor};
 type Backend = Wgpu;
 
 #[derive(Parser)]
@@ -68,10 +85,25 @@ pub struct Args {
     euler_steps: usize,
 }
 
+pub fn process_text(text: &String) -> Result<()> {
+    let txt = &text.to_string();
+    let sentences = segment("fr", txt);
+    for sentence in &sentences {
+        EKO!(sentence);
+        EKO!(words_count::count(sentence).words);
+    }
+    Ok(())    
+}
 
 pub fn run(args: Args) -> Result<()> {
     let device = burn::backend::wgpu::WgpuDevice::default();
-
+    let j = 1234;
+    let k = "abc";
+    EKO!(j);
+    EKO!(j, k);
+    if let Some(txt1) = &args.text {    
+        let _ = process_text(&txt1);
+    }
     // Resolve tokenizer
     let tokenizer_path = match &args.tokenizer {
         Some(p) => PathBuf::from(p),
@@ -106,15 +138,18 @@ pub fn run(args: Args) -> Result<()> {
         }
         let encoder =
             TekkenEncoder::from_file(&tokenizer_path).context("Failed to load tokenizer")?;
+        EKO!("encoding");
         encoder.encode(text)
     } else if !args.list_voices {
         bail!("--text or --token-ids required");
     } else {
         vec![]
     };
-
+    EKO!();
     if let Some(gguf_path) = &args.gguf {
-        run_q4(&args, gguf_path, &token_ids, &device)
+        
+        let vv = vec![token_ids];
+        run_q4_l(&args, gguf_path, vv, &device)
     } else {
         run_bf16(&args, &token_ids, &device)
     }
@@ -138,6 +173,7 @@ fn run_bf16(
     }
 
     let start = Instant::now();
+    EKO!(start);
     info!("Loading BF16 TTS pipeline from {}", model_dir.display());
     let mut pipeline =
         TtsPipeline::<Backend>::from_model_dir(&model_dir, device).context("Failed to load")?;
@@ -170,6 +206,7 @@ fn run_bf16(
         "Synthesizing"
     );
     let gen_start = Instant::now();
+    EKO!(gen_start);
     let audio =
         pipeline.generate_with_max_frames(token_ids, &args.voice, args.max_frames, device)?;
     let duration = audio.len() as f64 / audio.sample_rate as f64;
@@ -183,16 +220,34 @@ fn run_bf16(
 }
 
 /// Q4 GGUF path.
+fn run_q4_l(
+    args: &Args,
+    gguf_path: &str,
+    token_ids_list: Vec<Vec<u32>>,
+    device: &burn::backend::wgpu::WgpuDevice,
+) -> Result<()> {
+    //use voxtral_mini_realtime::gguf::Q4TtsModelLoader;
+    //use voxtral_mini_realtime::tts::config::{AudioCodebookLayout, TtsSpecialTokens};
+    //use voxtral_mini_realtime::tts::embeddings::AudioCodebookEmbeddings;
+    //use voxtral_mini_realtime::tts::voice::load_voice_from_bytes;
+    EKO!();
+    let _ = token_ids_list.iter().map(|tki| run_q4(args, gguf_path, tki, device));
+    Ok(())
+}
+
 fn run_q4(
     args: &Args,
     gguf_path: &str,
-    token_ids: &[u32],
+    token_ids: &Vec<u32>,
     device: &burn::backend::wgpu::WgpuDevice,
 ) -> Result<()> {
     use voxtral_mini_realtime::gguf::Q4TtsModelLoader;
     use voxtral_mini_realtime::tts::config::{AudioCodebookLayout, TtsSpecialTokens};
     use voxtral_mini_realtime::tts::embeddings::AudioCodebookEmbeddings;
     use voxtral_mini_realtime::tts::voice::load_voice_from_bytes;
+
+
+    
     /*
     tracing_subscriber::fmt()
         .event_format(
@@ -220,6 +275,17 @@ fn run_q4(
         .init();
 */
 
+    EKO!("start");
+    let time_format = "%I:%M:%S %p";
+    //let mut time_now = String::new();
+    
+    let time_now = chrono::Local::now()
+        .format(time_format)
+        .to_string();
+    EKO!(time_now);
+    EKO!("loading model");
+
+    
     let path = PathBuf::from(gguf_path);
     if !path.exists() {
         bail!("GGUF model not found at {}", path.display());
@@ -236,6 +302,7 @@ fn run_q4(
         "Q4 model loaded"
     );
 
+    EKO!("loading voices");
     // Resolve voices directory
     let voices_dir = match &args.voices_dir {
         Some(d) => PathBuf::from(d),
@@ -280,7 +347,7 @@ fn run_q4(
         frames = voice_embed.dims()[0],
         "Voice loaded"
     );
-
+    EKO!("embedding text");
     // Build input sequence
     let special = TtsSpecialTokens::default();
     let bos = backbone.embed_tokens_from_ids(&[special.bos_token_id as i32], 1, 1);
@@ -291,7 +358,7 @@ fn run_q4(
         backbone.embed_tokens_from_ids(&[special.repeat_audio_text_token_id as i32], 1, 1);
     let text_ids_i32: Vec<i32> = token_ids.iter().map(|&id| id as i32).collect();
     let text_embeds = backbone.embed_tokens_from_ids(&text_ids_i32, 1, text_ids_i32.len());
-
+    EKO!();
     let input_sequence = Tensor::cat(
         vec![
             bos,
@@ -304,7 +371,8 @@ fn run_q4(
         ],
         1,
     );
-
+    EKO!(input_sequence.shape());
+    EKO!(token_ids.len());
     let codebook = AudioCodebookEmbeddings::new(
         backbone.audio_codebook_embeddings().clone(),
         AudioCodebookLayout::default(),
@@ -315,7 +383,8 @@ fn run_q4(
         voice = %args.voice,
         "Synthesizing"
     );
-    println!("generate");
+    //println!("generate");
+    EKO!("generating");
     let gen_start = Instant::now();
     let frames = pollster::block_on(backbone.generate_async(
         input_sequence,
@@ -325,12 +394,14 @@ fn run_q4(
     ))
     .map_err(|e| anyhow::anyhow!("Generation failed: {e}"))?;
 
+    
     if frames.is_empty() {
         bail!("No audio frames generated");
     }
 
     // Codec decode
     let n_frames = frames.len();
+    EKO!(n_frames);
     println!("codec {}", n_frames);
     let semantic_indices: Vec<usize> = frames.iter().map(|f| f.semantic_idx).collect();
     let mut acoustic_data = Vec::with_capacity(n_frames * 36);
@@ -343,21 +414,53 @@ fn run_q4(
         burn::tensor::TensorData::new(acoustic_data, [n_frames, 36]),
         device,
     );
-    let waveform = codec.decode(&semantic_indices, acoustic_tensor);
+    EKO!(acoustic_tensor.shape());
+    EKO!(semantic_indices.len());
+    EKO!("encoding semantic token into audio");
+    /*
+    if 1>2 {
+        let block_size = 800;
+        let mut start = 0;
+        while 1>0 {
+            EKO!(start);
+            let end = std::cmp::min(start + block_size, semantic_indices.len());
+            let si = &semantic_indices[start .. end];
+            let acoustic_tensor1 = acoustic_tensor.clone().slice(s![start..end, ..]);
+            start = end+1 ;
+            if start >  semantic_indices.len() {
+                break;
+            }
+            let waveform =  codec.decode(&si, acoustic_tensor1);
+        }
+    }
+    */
+    
+    let waveform =  codec.decode(&semantic_indices, acoustic_tensor);
     let [_batch, total_samples] = waveform.dims();
+    EKO!(total_samples);
 
+    EKO!("saving audio");
     let wav_data = waveform.to_data();
     let mut samples: Vec<f32> = wav_data.as_slice::<f32>().unwrap()[..total_samples].to_vec();
-
+    EKO!(samples.len());
     let peak = samples.iter().map(|s| s.abs()).fold(0.0f32, f32::max);
     if peak > 1e-6 {
         let gain = 0.95 / peak;
+        EKO!(gain);
         for s in &mut samples {
             *s *= gain;
         }
     }
-
+    EKO!();
+    let gain_one_mn = 8.;
+    for (index, value) in samples.iter_mut().enumerate() {
+        let gi = 1. + (gain_one_mn - 1.)/1000000. * index as f32;
+        *value = *value * gi;
+        //println!("Index: {}, Value: {}", index, value);
+    }
+    
     let audio = AudioBuffer::new(samples, 24000);
+    EKO!(audio.len());
     let duration = audio.len() as f64 / audio.sample_rate as f64;
     info!(
         elapsed_ms = gen_start.elapsed().as_millis() as u64,

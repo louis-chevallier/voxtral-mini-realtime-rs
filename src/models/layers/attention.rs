@@ -9,6 +9,10 @@ use burn::tensor::activation::softmax;
 use burn::tensor::backend::Backend;
 use burn::tensor::{Float, Tensor};
 
+//use voxtral_mini_realtime::audio::AudioBuffer;
+
+//use voxtral_mini_realtime::bin::voxtral::EKO;
+
 use super::kv_cache::KVCache;
 use super::rope::RoPE;
 
@@ -129,7 +133,7 @@ impl<B: Backend> Attention<B> {
         causal: bool,
     ) -> Tensor<B, 3> {
         let [batch, seq_len, _d_model] = x.dims();
-
+        //EKO!("ici");
         // Project Q, K, V
         let q = self.wq.forward(x.clone());
         let k = self.wk.forward(x.clone());
