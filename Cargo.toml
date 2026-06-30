@@ -100,6 +100,13 @@ approx = "0.5"
 tempfile = "3.24"
 pollster = "0.4.0"
 
+
+[[bin]]
+name = "essai"
+path = "src/essai/essai.rs"
+required-features = []
+
+
 [[bin]]
 name = "voxtral"
 path = "src/bin/voxtral/main.rs"

@@ -1,5 +1,7 @@
+
+
 #[macro_export]
-macro_rules! EKO {
+macro_rules! EKO_X {
     () => {
         let time_format = "%I:%M:%S %p";
         //let mut time_now = String::new();
@@ -47,6 +49,6 @@ macro_rules! EKO {
     };
     
     ($($val:expr),+ $(,)?) => {
-        ($($crate::EKO!($val)),+,)
+        ($($crate::EKO_X!($val)),+,)
     };
 }

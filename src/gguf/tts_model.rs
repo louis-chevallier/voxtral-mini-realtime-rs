@@ -314,7 +314,9 @@ impl Q4TtsBackbone {
                 burn::tensor::Distribution::Normal(0.0, 1.0),
                 &self.device,
             );
-            let acoustic_raw = fm.euler_ode_solve(h.clone(), noise);
+
+            let noise1 = noise * 0 + 0.5; 
+            let acoustic_raw = fm.euler_ode_solve(h.clone(), noise1);
             let acoustic_indices = Fsq::quantize(acoustic_raw); // [1, 36]
 
             // Fused readback: concat [semantic_idx(1), acoustic(36)] → single transfer

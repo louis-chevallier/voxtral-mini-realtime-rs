@@ -29,8 +29,8 @@ use crate::EKO;
 use sentencex::segment;
 use words_count;
 
-//use burn::tensor::{Tensor, s};
-use burn::tensor::{Tensor};
+use burn::tensor::{Tensor, s};
+//use burn::tensor::{Tensor};
 type Backend = Wgpu;
 
 #[derive(Parser)]
@@ -101,6 +101,12 @@ pub fn run(args: Args) -> Result<()> {
     let k = "abc";
     EKO!(j);
     EKO!(j, k);
+
+    //use tch::{nn, Device, Tensor, Kind};
+
+    //tch::manual_seed(42); // Fixed seed for reproducibility
+
+    
     if let Some(txt1) = &args.text {    
         let _ = process_text(&txt1);
     }
@@ -178,6 +184,7 @@ fn run_bf16(
     let mut pipeline =
         TtsPipeline::<Backend>::from_model_dir(&model_dir, device).context("Failed to load")?;
     pipeline.set_euler_steps(args.euler_steps);
+    EKO!();
     info!(
         elapsed_ms = start.elapsed().as_millis() as u64,
         euler_steps = args.euler_steps,
@@ -231,7 +238,12 @@ fn run_q4_l(
     //use voxtral_mini_realtime::tts::embeddings::AudioCodebookEmbeddings;
     //use voxtral_mini_realtime::tts::voice::load_voice_from_bytes;
     EKO!();
-    let _ = token_ids_list.iter().map(|tki| run_q4(args, gguf_path, tki, device));
+    for tki in &token_ids_list {
+        EKO!();
+        let _ = run_q4(args, gguf_path, &tki, device);
+    }
+    //let _ = token_ids_list.iter().map(|tki| run_q4(args, gguf_path, tki, device));
+    EKO!();
     Ok(())
 }
 
@@ -323,6 +335,7 @@ fn run_q4(
             })
             .collect();
         voices.sort();
+        EKO!(voices.len());
         println!("Available voices ({}):", voices.len());
         for name in &voices {
             println!("  {name}");
@@ -333,12 +346,14 @@ fn run_q4(
     // Load voice
     let voice_path = voices_dir.join(format!("{}.safetensors", args.voice));
     if !voice_path.exists() {
+        EKO!();
         bail!(
             "Voice '{}' not found at {}\nUse --list-voices to see available presets",
             args.voice,
             voice_path.display()
         );
     }
+    EKO!();
     let voice_bytes = std::fs::read(&voice_path)?;
     let voice_embed: Tensor<Backend, 2> =
         load_voice_from_bytes(&voice_bytes, 3072, device).context("Failed to load voice")?;
@@ -416,24 +431,29 @@ fn run_q4(
     );
     EKO!(acoustic_tensor.shape());
     EKO!(semantic_indices.len());
+    EKO!(&args.output);
     EKO!("encoding semantic token into audio");
-    /*
+
     if 1>2 {
         let block_size = 800;
         let mut start = 0;
         while 1>0 {
             EKO!(start);
+            if start >=  semantic_indices.len() {
+                break;
+            }            
             let end = std::cmp::min(start + block_size, semantic_indices.len());
             let si = &semantic_indices[start .. end];
             let acoustic_tensor1 = acoustic_tensor.clone().slice(s![start..end, ..]);
-            start = end+1 ;
-            if start >  semantic_indices.len() {
-                break;
-            }
+            start = end ;
+
+            EKO!(acoustic_tensor1.shape());
+            EKO!(si.len());
             let waveform =  codec.decode(&si, acoustic_tensor1);
+            EKO!();
         }
     }
-    */
+
     
     let waveform =  codec.decode(&semantic_indices, acoustic_tensor);
     let [_batch, total_samples] = waveform.dims();

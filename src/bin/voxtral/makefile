@@ -13,22 +13,36 @@ SMALL_MESSAGE= "Quand un simple besoin amène, de proche en proche, à explorer 
 
 #start : quant
 
+
 eee :
 	echo $(ENORMOUS_MESSAGE)
-start :
+
+start : bonjour
+
+messages  :
 # Synthesize speech (BF16 or Q4)
 #	RUST_LOG=info cargo run --manifest-path=../../../Cargo.toml --release --features "wgpu,cli,hub" --bin voxtral -- speak --text $(MESSAGE) --voice fr_female --gguf models/voxtral-tts-q4.gguf --output /mnt/NUC/data/out_gguf_8.wav --euler-steps 8
 #	RUST_LOG=info cargo run --manifest-path=../../../Cargo.toml --release --features "wgpu,cli,hub" --bin voxtral -- speak --text $(MESSAGE) --voice fr_female --gguf models/voxtral-tts-q4.gguf --output /mnt/NUC/data/out_gguf.wav 
-#		cd ../../..; RUST_LOG=info cargo  run --release --features "wgpu,cli,hub" --bin voxtral -- speak --text $(BIG_MESSAGE) --voice fr_female --gguf models/voxtral-tts-q4.gguf --output /mnt/NUC/data/out_gguf_big.wav
-#	cd ../../..; RUST_LOG=info cargo  run --features "wgpu,cli,hub" --bin voxtral -- speak --text $(MEDIUM_MESSAGE) --voice fr_female --gguf models/voxtral-tts-q4.gguf --output /mnt/NUC/data/out_gguf_medium.wav 
-#	cd ../../..; RUST_LOG=info cargo  run --features "wgpu,cli,hub" --bin voxtral -- speak --text $(BIG_MESSAGE) --voice fr_male --gguf models/voxtral-tts-q4.gguf --output /mnt/NUC/data/out_gguf_big_male.wav
-	cd ../../..; RUST_LOG=info cargo run --release --features "wgpu,cli,hub" --bin voxtral -- speak --text $(ENORMOUS_MESSAGE) --voice fr_male --gguf models/voxtral-tts-q4.gguf --output /mnt/NUC/data/out_gguf_enormous_male.wav
+	-cd ../../..; RUST_LOG=info cargo  run --release --features "wgpu,cli,hub" --bin voxtral -- speak --text $(BIG_MESSAGE) --voice fr_female --gguf models/voxtral-tts-q4.gguf --output /mnt/NUC/data/out_gguf_big_female_$(TAG).wav
+	cd ../../..; RUST_LOG=info cargo  run --release --features "wgpu,cli,hub" --bin voxtral -- speak --text $(MEDIUM_MESSAGE) --voice fr_female --gguf models/voxtral-tts-q4.gguf --output /mnt/NUC/data/out_gguf_medium_female_$(TAG).wav
+	cd ../../..; RUST_LOG=info cargo  run --release --features "wgpu,cli,hub" --bin voxtral -- speak --text $(MEDIUM_MESSAGE) --voice fr_male --gguf models/voxtral-tts-q4.gguf --output /mnt/NUC/data/out_gguf_medium_male_$(TAG).wav 
+	-cd ../../..; RUST_LOG=info cargo  run --release --features "wgpu,cli,hub" --bin voxtral -- speak --text $(BIG_MESSAGE) --voice fr_male --gguf models/voxtral-tts-q4.gguf --output /mnt/NUC/data/out_gguf_big_male_$(TAG).wav
+#	cd ../../..; RUST_LOG=info cargo run --release --features "wgpu,cli,hub" --bin voxtral -- speak --text $(ENORMOUS_MESSAGE) --voice fr_male --gguf models/voxtral-tts-q4.gguf --output /mnt/NUC/data/out_gguf_enormous_male.wav
 
 bonjour :
-	cd ../../..; RUST_LOG=info cargo  run --features "wgpu,cli,hub" --bin voxtral -- speak --text "Bonjour monsieur" --voice fr_female --gguf models/voxtral-tts-q4.gguf --output /mnt/NUC/data/out_gguf_bonjour1.wav
-	cd ../../..; RUST_LOG=info cargo  run --features "wgpu,cli,hub" --bin voxtral -- speak --text "Bonjour monsieur!" --voice fr_female --gguf models/voxtral-tts-q4.gguf --output /mnt/NUC/data/out_gguf_bonjour2.wav
-	cd ../../..; RUST_LOG=info cargo  run --features "wgpu,cli,hub" --bin voxtral -- speak --text "Bonjour ! monsieur" --voice fr_female --gguf models/voxtral-tts-q4.gguf --output /mnt/NUC/data/out_gguf_bonjour2.wav 
+#	cd ../../..; RUST_LOG=info cargo  run --features "wgpu,cli,hub" --bin voxtral -- speak --text "Bonjour monsieur" --voice fr_female --gguf models/voxtral-tts-q4.gguf --output /mnt/NUC/data/out_gguf_bonjour1.wav
+#	-cd ../../..; RUST_LOG=info cargo  run --release --features "wgpu,cli,hub" --bin voxtral -- speak --text "Bonjour monsieur!" --voice fr_female --gguf models/voxtral-tts-q4.gguf --output /mnt/NUC/data/out_gguf_bonjour_female2.wav
+#	-cd ../../..; RUST_LOG=info cargo  run --release --features "wgpu,cli,hub" --bin voxtral -- speak --text "Bonjour ! monsieur" --voice fr_female --gguf models/voxtral-tts-q4.gguf --output /mnt/NUC/data/out_gguf_bonjour_female1.wav
+	-cd ../../..; RUST_LOG=info cargo  run --release --features "wgpu,cli,hub" --bin voxtral -- speak --text "Bonjour ! monsieur" --voice final_codes --gguf models/voxtral-tts-q4.gguf --output /mnt/NUC/data/out_gguf_bonjour_final.wav
+#	-cd ../../..; RUST_LOG=info cargo  run --release --features "wgpu,cli,hub" --bin voxtral -- speak --text "Bonjour ! monsieur" --voice lutringer --gguf models/voxtral-tts-q4.gguf --output /mnt/NUC/data/out_gguf_bonjour_lutringer.wav 
+#	-cd ../../..; RUST_LOG=info cargo  run --release --features "wgpu,cli,hub" --bin voxtral -- speak --text "Bonjour ! monsieur" --voice noiret --gguf models/voxtral-tts-q4.gguf --output /mnt/NUC/data/out_gguf_bonjour_noiret.wav
 
 
 quant :
 	cd ../../../scripts; python quantize_tts_gguf.py ../models/voxtral-tts
+
+help :
+	-cd ../../..; RUST_LOG=info cargo  run --release --features "wgpu,cli,hub" --bin voxtral -- speak --help
+
+list-voices :
+	cd ../../..; cargo run --release --features "wgpu,cli,hub" --bin voxtral -- speak --list-voices

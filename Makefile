@@ -121,3 +121,6 @@ list-voices :
 
 quantize :
 	uv run --with safetensors --with torch --with numpy --with packaging scripts/quantize_tts_gguf.py models/voxtral-tts/ -o voxtral-tts-q4.gguf
+
+start :
+	cargo run --bin essai
