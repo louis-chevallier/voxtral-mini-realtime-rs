@@ -124,3 +124,11 @@ quantize :
 
 start :
 	cargo run --bin essai
+
+LesCamarades.pdf : LesCamarades.epub
+	echo $* a $< b $@
+	ebook-convert $<  $@
+
+LesCamarades.mobi : LesCamarades.epub
+	echo $* a $< b $@
+	ebook-convert $<  $@
