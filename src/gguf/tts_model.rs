@@ -9,7 +9,7 @@ use burn::backend::wgpu::WgpuDevice;
 use burn::backend::Wgpu;
 use burn::nn::Linear;
 use burn::tensor::{Int, Tensor, TensorData};
-
+use tracing::info;
 use crate::models::layers::{KVCache, LayerCaches, RmsNorm, RoPE};
 use crate::models::time_embedding::TimeEmbedding;
 use crate::tts::config::{FmTransformerConfig, TtsBackboneConfig};
@@ -289,7 +289,7 @@ impl Q4TtsBackbone {
     ) -> Result<Vec<crate::tts::backbone::GeneratedFrame>, String> {
         use crate::tts::backbone::GeneratedFrame;
         use crate::tts::codec::quantizer::Fsq;
-
+        info!("generate");
         let acoustic_dim = fm.config().acoustic_dim;
         let [_, input_seq_len, _] = input_sequence.dims();
         let mut caches = self.create_cache(input_seq_len + max_frames);
@@ -299,13 +299,18 @@ impl Q4TtsBackbone {
         let prefill_out = self.forward_with_cache(input_sequence, &mut caches);
         let [batch, seq_len, dim] = prefill_out.dims();
         let mut h = prefill_out.slice([0..batch, (seq_len - 1)..seq_len, 0..dim]);
-
+        info!(max_frames);
+        let vvv = frames.len();
+        info!(vvv);
         // Phase 2: Decode loop — one frame per iteration.
         //
         // Dispatch semantic + euler in parallel before readback (both use h.clone()).
         // Single GPU sync per frame flushes all queued work.
         for frame_idx in 0..max_frames {
             // Dispatch semantic + euler together (no sync yet)
+
+            info!(frame_idx);
+            
             let semantic_logits = fm.semantic_logits(h.clone());
             let semantic_idx_f32 = semantic_logits.argmax(1).float(); // [1, 1] as f32
 

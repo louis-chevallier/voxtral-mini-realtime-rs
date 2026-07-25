@@ -7,13 +7,12 @@
 
 mod speak;
 mod transcribe;
-//use std::fmt::{Error }; //, Write};
+use std::fmt::{Error }; //, Write};
 //use std::io::{Write};
-
 //use crossterm::style::Stylize;
-//use tracing::{subscriber::Subscriber, Event};
-//use tracing_log::NormalizeEvent;
-/*
+use tracing::{subscriber::Subscriber, Event};
+use tracing_log::NormalizeEvent;
+//use std::fmt::Write;
 use tracing_subscriber::{
     fmt::{
         format::{Writer},
@@ -22,8 +21,9 @@ use tracing_subscriber::{
     },
     registry::LookupSpan,
 };
-*/
+
 use clap::{Parser, Subcommand};
+use tracing::info;
 
 #[macro_use]
 mod eko;
@@ -54,11 +54,16 @@ fn main() -> anyhow::Result<()> {
         .with_writer(std::io::stderr)
         .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
     .init();
-    */
-    //tracing_subscriber::fmt().event_format(SimpleFmt).init();
+     */
+    //let _ = tracing_subscriber::fmt().with_ansi(false);    
+    tracing_subscriber::fmt().with_ansi(false).event_format(SimpleFmt).init();
     let i = 123;
     EKO!("abc");
     EKO!(i);
+
+    info!("starting");
+    info!(i);
+    
     let cli = Cli::parse();
     match cli.command {
         Command::Transcribe(args) => transcribe::run(args),
@@ -66,7 +71,7 @@ fn main() -> anyhow::Result<()> {
     }
 }
 
-/*
+
 struct SimpleFmt;
 
 impl<S, N> FormatEvent<S, N> for SimpleFmt
@@ -82,20 +87,31 @@ where
     ) -> Result<(), Error> {
         // Create timestamp
         //let time_format = "%b %d %I:%M:%S%.6f %p";
-        let time_format = "%I:%M:%S% %p";
+        let time_format = "%I:%M:%S %p";
         //let mut time_now = String::new();
+        //EKO!();
+        let time_now1 = chrono::Local::now();
+        //EKO!();
 
-        let time_now = chrono::Local::now()
-            .format(time_format)
-            .to_string();
-
-
+        //let mut formatted = String::new();
+        //write!(formatted, "{}", time_now1 .format(time_format))?;
         
+        //let formatted = format!("{}", time_now1.format("%Y-%m-%d %H:%M:%S"));
+        //EKO!();
+        
+        let fr = time_now1.format(time_format);
+        //EKO!(&fr);
+        let time_now = fr.to_string();
+
+        //EKO!(tn);
+        //let time_now = "xxx";
         //ChronoLocal::new(time_format.into()).format_time(&mut time_now)?;
+        //EKO!();
 
         // Get line numbers from log crate events
         let normalized_meta = event.normalized_metadata();
         let meta = normalized_meta.as_ref().unwrap_or_else(|| event.metadata());
+        //EKO!();
 
         // Write formatted log record
         let message = format!(
@@ -107,9 +123,13 @@ where
             time_now, //.grey(),
             
         );
+        //EKO!();
+        
         write!(writer, "{}", message).unwrap();
         ctx.format_fields(writer.by_ref(), event)?;
+        //EKO!();
+        
         writeln!(writer)
     }
 }
-*/
+

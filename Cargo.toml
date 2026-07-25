@@ -93,6 +93,9 @@ crossterm = "0.29.0"
 sentencex = "0.1.30"
 words-count = "0.1.6"
 pdf = "0.10.0"
+lib-epub = "0.3.1"
+epub = "2.1.5"
+cli-epub-to-text = "0.1.26"
 
 [dev-dependencies]
 criterion = "0.8"
@@ -149,6 +152,7 @@ dist = true
 lto = true
 codegen-units = 1
 opt-level = 3
+incremental = true
 
 [profile.release-wasm]
 inherits = "release"

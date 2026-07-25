@@ -1,3 +1,14 @@
+
+# aller dans src/bin/voxtral
+
+# Pour faire des models de voix a partir d'échantillon wav => dans le repo voxtral-tts-codes-for-audio
+#      copier les voices embedding.pt resultant dans le folder models/voxtral-tts/voice_embedding
+# fabriquer les versions safetensors avec make convert_voice_models 
+
+
+
+
+
 .PHONY: build build-release build-wasm lint lint-wasm fmt test bench bench-audio bench-q4 bench-e2e profile-chrome profile-flamegraph eval-wer-fleurs eval-wer-libri clean
 
 # Build
@@ -132,3 +143,9 @@ LesCamarades.pdf : LesCamarades.epub
 LesCamarades.mobi : LesCamarades.epub
 	echo $* a $< b $@
 	ebook-convert $<  $@
+
+
+%.txt : %.epub
+	echo ebook-convert $< X$@
+	echo tr -d '\r' < X$@ > $@
+

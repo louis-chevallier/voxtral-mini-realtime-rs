@@ -21,7 +21,7 @@ pub mod conv;
 pub mod layer_scale;
 pub mod qk_norm;
 pub mod quantizer;
-
+use tracing::info;
 use anyhow::{Context, Result};
 use burn::tensor::backend::Backend;
 use burn::tensor::Tensor;
@@ -31,6 +31,7 @@ use crate::tts::config::CodecDecoderConfig;
 use block::CodecTransformerLayer;
 use conv::{CausalConv1d, CausalConvTranspose1d};
 use quantizer::{Fsq, VqCodebook};
+
 
 /// A transformer block group: 2 transformer layers sharing the same sliding window.
 struct TransformerGroup<B: Backend> {
@@ -188,8 +189,9 @@ impl<B: Backend> CodecDecoder<B> {
         semantic_indices: &[usize],
         acoustic_indices: Tensor<B, 2>,
     ) -> Tensor<B, 2> {
-        let n_frames = semantic_indices.len();
 
+        let n_frames = semantic_indices.len();
+        info!(n_frames);
         // Step 1: Dequantize tokens to continuous features
         // Semantic: VQ codebook lookup → [N, 256]
         let semantic_embeds = self.vq_codebook.dequantize(semantic_indices);
@@ -201,14 +203,21 @@ impl<B: Backend> CodecDecoder<B> {
         let features = Tensor::cat(vec![semantic_embeds, acoustic_values], 1);
         let input_channels = features.dims()[1];
 
+
+
         // Step 3: Reshape to conv format [1, input_channels, N] (batch, channels, time)
         let x = features
             .reshape([1, n_frames, input_channels])
             .swap_dims(1, 2);
 
+
+        info!("decode1");
+
         // Step 4: Input projection [1, 292, N] → [1, 1024, N]
         let x = self.input_conv.forward(x);
 
+
+        info!("decode2");        
         // Step 5: 4 rounds of (transformer group + upsample)
         // Group 0 (SW=2) → upsample 2x
         // Group 1 (SW=4) → upsample 2x
@@ -216,6 +225,9 @@ impl<B: Backend> CodecDecoder<B> {
         // Group 3 (SW=16) → no upsample (last group)
         let mut x = x;
         for (i, group) in self.transformer_groups.iter().enumerate() {
+            info!(i);
+            let shp = x.shape().to_string();
+            info!(shp);
             // Transformer expects [batch, seq, dim], conv uses [batch, dim, time]
             let x_seq = x.swap_dims(1, 2); // [batch, time, channels]
             let x_seq = group.forward(x_seq);
@@ -226,10 +238,11 @@ impl<B: Backend> CodecDecoder<B> {
                 x = self.upsample_convs[i].forward(x);
             }
         }
+        info!("decode3");
 
         // Step 6: Output projection [1, 1024, T] → [1, 240, T]
         let x = self.output_conv.forward(x);
-
+        info!("decode4");
         // Step 7: Reshape patches to waveform
         // x: [1, 240, T_patches] → [1, 240 * T_patches]
         let [_batch, patch_size, n_patches] = x.dims();

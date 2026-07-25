@@ -12,8 +12,8 @@ macro_rules! EKO {
         {
             // Use of `match` here is intentional because it affects the lifetimes
             // of temporaries - https://stackoverflow.com/a/48732525/1063961
-            let time_format = "%I:%M:%S %p";
             //let mut time_now = String::new();
+            let time_format = "%I:%M:%S %p";
             let time_now = chrono::Local::now()
                 .format(time_format)
                 .to_string();
