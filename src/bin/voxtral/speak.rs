@@ -165,6 +165,13 @@ pub fn run(args: Args) -> Result<()> {
         let contents1 = fs::read_to_string(file_text).expect("Should have been able to read the file");
         let contents2 = contents1.trim().replace("\n", " ");
 
+        let contents66 = contents1
+            .split('\n')
+            .filter(|short| !short.is_empty())
+            .collect::<Vec<_>>();
+        
+
+        
         let contents3 = contents2
         .replace(['\n', '\t'], " ")
         .trim()
@@ -179,7 +186,10 @@ pub fn run(args: Args) -> Result<()> {
         EKO!("encoding");
         let mut v: Vec<Vec<u32>> = vec![];        
         let mut vs: Vec<String> = vec![];        
-        let sentences = segment("fr", contents.as_str());
+        let mut sentences = segment("fr", contents.as_str());
+
+        sentences = contents66;
+        
         for sentence in &sentences {
             //EKO!(sentence);
             //EKO!(words_count::count(sentence).words);
